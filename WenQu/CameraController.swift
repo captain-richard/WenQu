@@ -20,20 +20,21 @@ class CameraController{
     var rearCameraInput: AVCaptureDeviceInput?
     
     var photoOutput: AVCapturePhotoOutput?
-    
     var previewLayer: AVCaptureVideoPreviewLayer?
 }
 
 extension CameraController{
     func prepare(completionHandler: @escaping(Error?) -> Void){
-        self.captureSession = AVCaptureSession()
         
-        func createCaptureSession() { }
+        func createCaptureSession() {
+            self.captureSession = AVCaptureSession()
+        }
+        
         func configureCaptureDevices() throws {
             
             //1
             let session = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera], mediaType: AVMediaType.video, position: .unspecified)
-            //guard let cameras = (session.devices.compactMap { $0 }), !cameras.isEmpty else { throw CameraControllerError.noCamerasAvailable }
+            // guard let cameras = (session.devices.compactMap { $0 }), !cameras.isEmpty else { throw CameraControllerError.noCamerasAvailable }
             
             let cameras = (session.devices.compactMap { $0 })
             if cameras.isEmpty { throw CameraControllerError.noCamerasAvailable }
@@ -53,8 +54,43 @@ extension CameraController{
                 }
             }
         }
-        func configureDeviceInputs() throws { }
-        func configurePhotoOutput() throws { }
+        
+        func configureDeviceInputs() throws {
+            
+            //3
+            guard let captureSession = self.captureSession else { throw CameraControllerError.captureSessionIsMissing }
+            
+            //4
+            if let rearCamera = self.rearCamera {
+                self.rearCameraInput = try AVCaptureDeviceInput(device: rearCamera)
+                
+                if captureSession.canAddInput(self.rearCameraInput!) { captureSession.addInput(self.rearCameraInput!) }
+                
+                self.currentCameraPosition = .rear
+            }
+                
+            else if let frontCamera = self.frontCamera {
+                self.frontCameraInput = try AVCaptureDeviceInput(device: frontCamera)
+                
+                if captureSession.canAddInput(self.frontCameraInput!) { captureSession.addInput(self.frontCameraInput!) }
+                else { throw CameraControllerError.inputsAreInvalid }
+                
+                self.currentCameraPosition = .front
+            }
+            else { throw CameraControllerError.noCamerasAvailable }
+        }
+        
+        func configurePhotoOutput() throws {
+            
+            guard let captureSession = self.captureSession else { throw CameraControllerError.captureSessionIsMissing }
+            
+            self.photoOutput = AVCapturePhotoOutput()
+            self.photoOutput!.setPreparedPhotoSettingsArray([AVCapturePhotoSettings(format: [AVVideoCodecKey : AVVideoCodecType.jpeg])], completionHandler: nil)
+            
+            if captureSession.canAddOutput(self.photoOutput!) { captureSession.addOutput(self.photoOutput!) } // here I have some issue -- Qi
+
+            captureSession.startRunning()
+        }
         
         DispatchQueue(label: "prepare").async {
             do {
@@ -76,43 +112,6 @@ extension CameraController{
                 completionHandler(nil)
             }
         }
-    }
-    
-    func configureDeviceInputs() throws {
-        //3
-        guard let captureSession = self.captureSession else { throw CameraControllerError.captureSessionIsMissing }
-        
-        //4
-        if let rearCamera = self.rearCamera {
-            self.rearCameraInput = try AVCaptureDeviceInput(device: rearCamera)
-            
-            if captureSession.canAddInput(self.rearCameraInput!) { captureSession.addInput(self.rearCameraInput!) }
-            
-            self.currentCameraPosition = .rear
-        }
-            
-        else if let frontCamera = self.frontCamera {
-            self.frontCameraInput = try AVCaptureDeviceInput(device: frontCamera)
-            
-            if captureSession.canAddInput(self.frontCameraInput!) { captureSession.addInput(self.frontCameraInput!) }
-            else { throw CameraControllerError.inputsAreInvalid }
-            
-            self.currentCameraPosition = .front
-        }
-            
-        else { throw CameraControllerError.noCamerasAvailable }
-    }
-    
-    
-    func configurePhotoOutput() throws {
-        guard let captureSession = self.captureSession else { throw CameraControllerError.captureSessionIsMissing }
-        
-        self.photoOutput = AVCapturePhotoOutput()
-        self.photoOutput!.setPreparedPhotoSettingsArray([AVCapturePhotoSettings(format: [AVVideoCodecKey : AVVideoCodecType.jpeg])], completionHandler: nil)
-        
-        if captureSession.canAddOutput(self.photoOutput!) { captureSession.addOutput(self.photoOutput!) } // here I have some issue -- Qi
-        
-        captureSession.startRunning()
     }
 }
 

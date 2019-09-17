@@ -30,13 +30,6 @@ class ViewController: UIViewController {
 extension ViewController {
     override func viewDidLoad() {
         
-        func styleCaptureButton() {
-            captureButton.layer.borderColor = UIColor.black.cgColor
-            captureButton.layer.borderWidth = 2
-            
-            captureButton.layer.cornerRadius = min(captureButton.frame.width, captureButton.frame.height) / 2
-        }
-        
         func configureCameraController() {
             cameraController.prepare {(error) in
                 if let error = error {
@@ -45,6 +38,13 @@ extension ViewController {
                 
                 try? self.cameraController.displayPreview(on: self.capturePreviewView)
             }
+        }
+        
+        func styleCaptureButton() {
+            captureButton.layer.borderColor = UIColor.black.cgColor
+            captureButton.layer.borderWidth = 2
+            
+            captureButton.layer.cornerRadius = min(captureButton.frame.width, captureButton.frame.height) / 2
         }
         
         styleCaptureButton()
